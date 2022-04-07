@@ -6,10 +6,11 @@ public class EvenementLocalise {
 
     private GeoPoint coord;
 
-    public EvenementLocalise(GeoPoint coord, String descr) {
+    public EvenementLocalise(GeoPoint coord, String name) {
         this.coord = coord;
-        this.descr = descr;
+        this.descr = name;
     }
+
 
     public GeoPoint getCoord() {
         return coord;

@@ -3,6 +3,8 @@ package com.example.lem;
 import static java.security.AccessController.getContext;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.ViewPager;
 
 import android.content.Context;
@@ -26,6 +28,9 @@ import android.widget.Toast;
 import com.android.volley.Request;
 import com.android.volley.toolbox.StringRequest;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.osmdroid.api.IMapController;
 import org.osmdroid.config.Configuration;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
@@ -67,13 +72,13 @@ public class Home extends AppCompatActivity implements Serializable {
 
     /**
      * Récupère par web service les evennements que l'utilisateur doit voir
-     * @param username le nom de l'utilisateur
+     * @param userId le nom de l'utilisateur
      * @return la liste des evennements que l'utilisateur doit voir
      */
-    private void requestEventsForUser(String username){
+    private void requestEventsForUser(String userId){
         ArrayList<EvenementLocalise> l = new ArrayList<>();
 
-        String url = "http://10.0.2.2/~maxime.dumontet/jumati/public/get_data_activity_user";
+        String url = "http://10.0.2.2/~maxime.dumontet/jumati/public/get_data_activity_user/" + userId;
         StringRequest stringRequest = new StringRequest(
                 Request.Method.GET,
                 url,
@@ -88,11 +93,17 @@ public class Home extends AppCompatActivity implements Serializable {
     private void processEventsForUser(String reponse){
         ArrayList<EvenementLocalise> l =new ArrayList<>();
         //code de traitement volley, parsing du json, instanciation des evennement
-        /*
-        ...
-        ...
-        ...
-         */
+        try {
+            JSONArray obj = new JSONArray(reponse);
+            for (int i = 0; i < obj.length(); i++) {
+                JSONObject jo = obj.getJSONObject(i);
+                EvenementLocalise el = new EvenementLocalise((GeoPoint) jo.get("activity_coordinate"), jo.getString("activity_name"));
+                l.add(el);
+            }
+
+        } catch (JSONException e) {
+            getError(e);
+        }
 
         //je mets a jour la liste d'evennements de l'activity
         mesEvenements=l;
@@ -196,7 +207,7 @@ public class Home extends AppCompatActivity implements Serializable {
     private void addMarkerFromEvennementLocalise(EvenementLocalise e){
         Marker m=new Marker(map);
         m.setPosition(e.getCoord());
-        Log.e("fjlsd", String.valueOf(e.getCoord()));
+        Log.e("coordonnées", String.valueOf(e.getCoord()));
         m.setTitle(e.getDescr());
         m.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
         map.getOverlays().add(m);
@@ -248,14 +259,19 @@ public class Home extends AppCompatActivity implements Serializable {
         //je place mon ui en mode visualisation
         modeCreation(null);
 
-        //pour patienter avant qu'on ait développé tout ce qu'il faut pour les ws, on fait appel à une fausse méthode
-        fakeRequestEventsForUser("bob");
-
+        //connexion user
         Intent intent = getIntent();
 
         UserClass user = (UserClass) intent.getSerializableExtra("user");
 
         Log.e("user", String.valueOf(user.getUser_email()));
+
+        /*//pour patienter avant qu'on ait développé tout ce qu'il faut pour les ws, on fait appel à une fausse méthode
+        fakeRequestEventsForUser("bob");*/
+
+        //test recuperation des activités depuis ws
+        requestEventsForUser(String.valueOf(user.getId_user()));
+
     }
 
 
