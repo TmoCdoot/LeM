@@ -1,32 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.viewpager.widget.ViewPager
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="horizontal"
-    android:id="@+id/viewpage"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
+
     <org.osmdroid.views.MapView
         android:id="@+id/mapview"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        tilesource="Mapnik" >
-
-        <TextView
-            android:id="@+id/textViewLatitude"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Latitude : " />
-
-        <TextView
-            android:id="@+id/textViewLongitude"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Longitutde : " />
-
-        <TextView
-            android:id="@+id/textViewAdresse"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="t ici bg : " />
-    </org.osmdroid.views.MapView>
-</androidx.viewpager.widget.ViewPager>
+        android:layout_height="wrap_content" />
+</LinearLayout>
