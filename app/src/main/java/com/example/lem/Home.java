@@ -7,6 +7,7 @@ import androidx.viewpager.widget.ViewPager;
 
 import android.content.Context;
 import android.content.ContextWrapper;
+import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
@@ -38,18 +39,23 @@ import org.osmdroid.views.overlay.Overlay;
 import org.osmdroid.views.overlay.OverlayItem;
 
 import java.io.File;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Home extends AppCompatActivity {
+public class Home extends AppCompatActivity implements Serializable {
 
     MapView map = null;
     // Resources res = getResources();
     private ViewPager viewPager;
 
 
+
+
+
+
     /**
-     * la collection de points d'intérêt
+     * la collection de points d'intérêt (evenement)
      */
     private ArrayList<EvenementLocalise> mesEvenements;
     /**
@@ -103,7 +109,7 @@ public class Home extends AppCompatActivity {
 
 
     /**
-     *
+     * simple ou double tap
      */
     private Overlay buildTouchOverlay(){
         Overlay touchOverlay = new Overlay(this){
@@ -116,6 +122,8 @@ public class Home extends AppCompatActivity {
             private void dlgThread() {
             }
 
+
+            //ajout de point au click
             @Override
             public boolean onSingleTapConfirmed(final MotionEvent e, final MapView mapView) {
                 Projection proj = mapView.getProjection();
@@ -195,6 +203,11 @@ public class Home extends AppCompatActivity {
         m.setIcon(getResources().getDrawable(R.drawable.marker));
     }
 
+
+
+
+
+
     /**
      * Simule la recuperation des evenements par ws
      * @param usr
@@ -208,6 +221,12 @@ public class Home extends AppCompatActivity {
         mesEvenements=elist;
         startMap();
     }
+
+
+
+
+
+
 
 
 
@@ -232,8 +251,20 @@ public class Home extends AppCompatActivity {
         //pour patienter avant qu'on ait développé tout ce qu'il faut pour les ws, on fait appel à une fausse méthode
         fakeRequestEventsForUser("bob");
 
+        Intent intent = getIntent();
+
+        UserClass user = (UserClass) intent.getSerializableExtra("user");
+
+        Log.e("user", String.valueOf(user.getUser_email()));
     }
 
+
+
+
+
+    /**
+     * test different mode
+     * */
 
     public void modeVisualisation(View v){
         etat=EnumerationEtatsInteraction.VISUALISATION;
@@ -247,6 +278,14 @@ public class Home extends AppCompatActivity {
     public void modeCreation(View v){
         etat=EnumerationEtatsInteraction.CREATION;
     }
+
+
+
+
+
+
+
+
 
     /**
      * retourne l'evennement le plus proche du geopoint passé en param
@@ -266,6 +305,11 @@ public class Home extends AppCompatActivity {
         }
         return selected;
     }
+
+
+
+
+
 
 
     /**
