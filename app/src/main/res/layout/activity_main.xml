@@ -67,6 +67,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="9dp"
         android:background="@drawable/custom_button"
+        android:onClick="register"
         android:paddingLeft="70px"
         android:paddingRight="70px"
         android:text="Register"
