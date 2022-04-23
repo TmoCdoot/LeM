@@ -2,17 +2,27 @@ package com.example.lem;
 
 import static java.security.AccessController.getContext;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.ViewPager;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
+import android.location.Criteria;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -26,7 +36,9 @@ import android.widget.TableLayout;
 import android.widget.Toast;
 
 import com.android.volley.Request;
+import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -50,69 +62,203 @@ import java.util.List;
 
 public class Home extends AppCompatActivity implements Serializable {
 
+    RequestQueue fileRequeteWS;
+    //map
     MapView map = null;
-    // Resources res = getResources();
-    private ViewPager viewPager;
+    private GeoPoint center = null;
+    //pour localisation gps
+    private LocationManager locationManager;
+    private LocationListener locationListener;
+    //list activity
+    private ArrayList<EvenementLocalise> mesEvenements = new ArrayList<>();
+    //list friend
+    private ArrayList<FriendsClass> mesFriends = new ArrayList<>();
+    private int countFriend;
+    private boolean readyToLoadEvenement = false;
+    //user
+    private UserClass user;
 
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        fileRequeteWS = Volley.newRequestQueue(this);
+
+        Intent intent = getIntent();
+        user = (UserClass) intent.getSerializableExtra("user");
+
+        //recuperation des friends de l'utilisateur
+        requestGetFriendsByUser();
+
+        //definir permission localisation
+        if (ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[] {
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                    Manifest.permission.INTERNET
+            }, 10);
+            return;
+        } else {
+            loadParamMapPermission();
+        }
+    }
 
 
-
-
-    /**
-     * la collection de points d'intérêt (evenement)
-     */
-    private ArrayList<EvenementLocalise> mesEvenements;
-    /**
-     * le centre de la  map
-     */
-    private GeoPoint center;
-
-    private EnumerationEtatsInteraction etat;
-
-    /**
-     * Récupère par web service les evennements que l'utilisateur doit voir
-     * @param userId le nom de l'utilisateur
-     * @return la liste des evennements que l'utilisateur doit voir
-     */
-    private void requestEventsForUser(String userId){
-        ArrayList<EvenementLocalise> l = new ArrayList<>();
-
-        String url = "http://10.0.2.2/~maxime.dumontet/jumati/public/get_data_activity_user/" + userId;
+    //recuperation de friends de l'utilisateur connecter
+    private void requestGetFriendsByUser() {
+        String url = "http://10.0.2.2/Jumati/public/webservice/get_data_friend?id=" + String.valueOf(user.getId_user());
         StringRequest stringRequest = new StringRequest(
                 Request.Method.GET,
                 url,
-                this::processEventsForUser,
+                this::processFriendsResultRequest,
                 this::getError);
+        fileRequeteWS.add(stringRequest);
     }
 
+    //traite le resultat et fait une requete pour recuperer les information du friends
+    private void processFriendsResultRequest(String reponse) {
+        try {
+            JSONArray obj = new JSONArray(reponse);
+            if (obj.getJSONObject(0).getString("friendsReturn").equals("1")) {
+                countFriend = obj.length()-1;
+                for (int i = 1; i< obj.length(); i++) {
+                    String id_friends = obj.getJSONObject(i).getString("dest_friend_user_id");
+                    String url = "http://10.0.2.2/Jumati/public/webservice/get_data_user_by_friend_id?id=" + id_friends;
+                    StringRequest stringRequest = new StringRequest(
+                            Request.Method.GET,
+                            url,
+                            this::processDataByFriendsIdResult,
+                            this::getError);
+                    fileRequeteWS.add(stringRequest);
+                }
+            } else {
+                Toast.makeText(this,"Pas d'amis", Toast.LENGTH_LONG).show();
+            }
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    //traitement resultat et creation des objet friends et ajout dans la liste des friend
+    private void processDataByFriendsIdResult(String reponse) {
+        try {
+            JSONArray obj = new JSONArray(reponse);
+            FriendsClass friend = new FriendsClass(obj.getJSONObject(1).getString("user_id"),
+                    obj.getJSONObject(1).getString("user_pseudo"),
+                    obj.getJSONObject(1).getString("user_activity_id_create"),
+                    obj.getJSONObject(1).getString("user_activity_id_join"));
+            mesFriends.add(friend);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        int countFriendList = mesFriends.size();
+        if (countFriendList == countFriend) {
+            readyToLoadEvenement = true;
+
+            //pour patienter avant qu'on ait développé tout ce qu'il faut pour les ws, on fait appel à une fausse méthode
+            //fakeRequestEventsForUser("bob");
+
+            //test recuperation des activités depuis ws
+            requestEventsForUser();
+        }
+    }
+
+
+
+    //si user accepter la location alors load map
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode) {
+            case 10:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    loadParamMapPermission();
+                }
+                return;
+        }
+    }
+
+    private void loadParamMapPermission() {
+        mesEvenements = null;
+
+        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        locationListener = new LocationListener() {
+            @Override
+            public void onLocationChanged(@NonNull Location location) {
+                Log.d("gps", location.getLatitude() + "   " + location.getLongitude());
+                center = new GeoPoint(location.getLatitude(), location.getLongitude());
+
+                //je place mon ui en mode visualisation
+                //modeCreation(null);
+
+                //connexion user
+                Log.e("user", String.valueOf(user.getUser_email()));
+
+
+                /*//pour patienter avant qu'on ait développé tout ce qu'il faut pour les ws, on fait appel à une fausse méthode*/
+                //fakeRequestEventsForUser("bob");
+
+
+                //test recuperation des activités depuis ws
+                //requestEventsForUser(String.valueOf(user.getId_user()));
+            }
+        };
+        locationManager.requestLocationUpdates("gps", 0, 1000, locationListener);
+    }
+
+
     /**
-     * traite la reponse du serveur contenant les evenements localises
-     * @param reponse la reponse du serveur
+     * Récupère par web service les evennements que l'utilisateur doit voir
+     * @return la liste des evennements que l'utilisateur doit voir
      */
+    private void requestEventsForUser(){
+        for (int i = 0; i < mesFriends.size(); i++) {
+            Log.d("friend", String.valueOf(mesFriends.get(i).getFriend_pseudo()));
+            String url = "http://10.0.2.2/Jumati/public/webservice/get_data_activity_user?id=" + String.valueOf(mesFriends.get(i).getFriend_user_id()) ;
+            StringRequest stringRequest = new StringRequest(
+                    Request.Method.GET,
+                    url,
+                    this::processEventsForUser,
+                    this::getError);
+            fileRequeteWS.add(stringRequest);
+        }
+
+    }
+
     private void processEventsForUser(String reponse){
-        ArrayList<EvenementLocalise> l =new ArrayList<>();
         //code de traitement volley, parsing du json, instanciation des evennement
         try {
             JSONArray obj = new JSONArray(reponse);
-            for (int i = 0; i < obj.length(); i++) {
-                JSONObject jo = obj.getJSONObject(i);
-                EvenementLocalise el = new EvenementLocalise((GeoPoint) jo.get("activity_coordinate"), jo.getString("activity_name"));
-                l.add(el);
+            if (obj.getJSONObject(0).getString("activitesReturn").equals("1")) {
+                EvenementLocalise activity = new EvenementLocalise(obj.getJSONObject(1).getString("activity_id"),
+                        obj.getJSONObject(1).getString("activity_id_creator"),
+                        obj.getJSONObject(1).getString("activity_latitude"),
+                        obj.getJSONObject(1).getString("activity_longitude"),
+                        obj.getJSONObject(1).getString("activity_max_member"),
+                        obj.getJSONObject(1).getString("activity_status"),
+                        obj.getJSONObject(1).getString("activity_name"),
+                        obj.getJSONObject(1).getString("category_id"),
+                        obj.getJSONObject(1).getString("activity_view"));
+                Log.d("acti", String.valueOf(activity));
+                mesEvenements.add(activity);
+                //ajout dans liste marche pas
             }
-
         } catch (JSONException e) {
             getError(e);
         }
 
-        //je mets a jour la liste d'evennements de l'activity
-        mesEvenements=l;
+        if (countFriend == mesEvenements.size()) {
+            Log.d("valid", "true");
+        }
 
         //je demare la creation de la map
-        startMap();
+        //startMap();
     }
 
-    // en cas d'erreur de la requete, fonction appelée
     public void getError(Throwable t) {
         Toast.makeText(this, "probleme serveur", Toast.LENGTH_LONG).show();
         Log.e("categorie", "probleme serveur", t);
@@ -127,19 +273,28 @@ public class Home extends AppCompatActivity implements Serializable {
             ItemizedIconOverlay<OverlayItem> anotherItemizedIconOverlay = null;
             @Override
             public void draw(Canvas arg0, MapView arg1, boolean arg2) {
-
             }
 
             private void dlgThread() {
             }
 
-
-            //ajout de point au click
+            //ajout de point sur long press
             @Override
-            public boolean onSingleTapConfirmed(final MotionEvent e, final MapView mapView) {
+            public boolean onLongPress(final MotionEvent e, final MapView mapView) {
                 Projection proj = mapView.getProjection();
                 GeoPoint loc = (GeoPoint) proj.fromPixels((int)e.getX(), (int)e.getY());
-                switch(etat){
+
+                //code de reaction au tap dans le mode creation
+                EvenementLocalise el = new EvenementLocalise(user.getId_user(), Double.toString(loc.getLatitude()), Double.toString(loc.getLongitude()),"nouvel evenement", "7", "OPEN", "4", null);
+                //on ajoute l'evennement pour sauvegarde ulterieure (ou plutot on pourrait declencher directement la sauvegarde -- plus tard --)
+                mesEvenements.add(el);
+                //addMarkerFromEvennementLocalise(el);
+                map.invalidate();
+                dlgThread();
+                return true;
+
+
+                /*switch(etat){
                     case VISUALISATION:
                         //code de reaction au tap dans le mode visualisation
                         EvenementLocalise elo=nearest(loc);
@@ -161,16 +316,11 @@ public class Home extends AppCompatActivity implements Serializable {
                         addMarkerFromEvennementLocalise(el);
 
                         break;
-                }
-
-                map.invalidate();
-                dlgThread();
-                return true;
+                }*/
             }
         };
         return touchOverlay;
     }
-
 
 
     /**
@@ -198,32 +348,28 @@ public class Home extends AppCompatActivity implements Serializable {
 
         // ajout de tous les points stockés dans mesEvenements
         for (EvenementLocalise e:mesEvenements){
-            addMarkerFromEvennementLocalise(e);
+            //addMarkerFromEvennementLocalise(e);
         }
 
         map.getOverlays().add(buildTouchOverlay());
     }
 
-    private void addMarkerFromEvennementLocalise(EvenementLocalise e){
+    /*private void addMarkerFromEvennementLocalise(EvenementLocalise e){
         Marker m=new Marker(map);
-        m.setPosition(e.getCoord());
+        m.setPosition(e.getActivity_latitude(), e.getActivity_longitude());
         Log.e("coordonnées", String.valueOf(e.getCoord()));
-        m.setTitle(e.getDescr());
+        m.setTitle(e.getActivity_name());
         m.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
         map.getOverlays().add(m);
         m.setIcon(getResources().getDrawable(R.drawable.marker));
-    }
-
-
-
-
+    }*/
 
 
     /**
      * Simule la recuperation des evenements par ws
      * @param usr
      */
-    private void fakeRequestEventsForUser(String usr){
+   /* private void fakeRequestEventsForUser(String usr){
         ArrayList<EvenementLocalise> elist = new ArrayList<>();
         EvenementLocalise el = new EvenementLocalise(new GeoPoint(47.368284, 1.740004),"tennis avec Louise");
         elist.add(el);
@@ -231,7 +377,7 @@ public class Home extends AppCompatActivity implements Serializable {
         elist.add(el);
         mesEvenements=elist;
         startMap();
-    }
+    }*/
 
 
 
@@ -241,38 +387,7 @@ public class Home extends AppCompatActivity implements Serializable {
 
 
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
 
-        mesEvenements = null;
-
-        //on demandera la recuperation des evennements pour l'utilisateur connecté
-        //la methode process associée au chargement executera l'affichage de la map
-        /*requestEventsForUser("bob");*/
-
-
-        //je configure le centre de la map
-        center = new GeoPoint(new GeoPoint(47.368284, 1.740004));
-
-
-        //je place mon ui en mode visualisation
-        modeCreation(null);
-
-        //connexion user
-        Intent intent = getIntent();
-
-        UserClass user = (UserClass) intent.getSerializableExtra("user");
-
-        Log.e("user", String.valueOf(user.getUser_email()));
-
-        /*//pour patienter avant qu'on ait développé tout ce qu'il faut pour les ws, on fait appel à une fausse méthode
-        fakeRequestEventsForUser("bob");*/
-
-        //test recuperation des activités depuis ws
-        requestEventsForUser(String.valueOf(user.getId_user()));
-
-    }
 
 
 
@@ -281,7 +396,7 @@ public class Home extends AppCompatActivity implements Serializable {
     /**
      * test different mode
      * */
-
+/*
     public void modeVisualisation(View v){
         etat=EnumerationEtatsInteraction.VISUALISATION;
     }
@@ -293,7 +408,7 @@ public class Home extends AppCompatActivity implements Serializable {
     }
     public void modeCreation(View v){
         etat=EnumerationEtatsInteraction.CREATION;
-    }
+    }*/
 
 
 
@@ -308,7 +423,7 @@ public class Home extends AppCompatActivity implements Serializable {
      * @param loc le geopoint tappé
      * @return l'evt le plus proche (null si trop loin????????)
      */
-    public EvenementLocalise nearest(GeoPoint loc){
+    /*public EvenementLocalise nearest(GeoPoint loc){
         double distance=Double.MAX_VALUE;
         EvenementLocalise selected=null;
         for(EvenementLocalise el:mesEvenements){
@@ -320,7 +435,7 @@ public class Home extends AppCompatActivity implements Serializable {
             }
         }
         return selected;
-    }
+    }*/
 
 
 

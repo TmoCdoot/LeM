@@ -10,7 +10,7 @@
         android:id="@+id/inputPseudo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="108dp"
+        android:layout_marginTop="228dp"
         android:background="@drawable/custom_input"
         android:backgroundTint="#d2d8e9"
         android:ems="10"
@@ -18,84 +18,8 @@
         android:inputType="textPersonName"
         android:padding="20px"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.497"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
-
-    <Button
-        android:id="@+id/buttonRegister"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="72dp"
-        android:background="@drawable/custom_button"
-        android:onClick="createAccount"
-        android:paddingLeft="70px"
-        android:paddingRight="70px"
-        android:text="Register"
-        android:textSize="12sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.496"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <EditText
-        android:id="@+id/inputFirstName"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:background="@drawable/custom_input"
-        android:backgroundTint="#d2d8e9"
-        android:ems="10"
-        android:hint="First name"
-        android:inputType="textPersonName"
-        android:padding="20px"
-        app:layout_constraintStart_toStartOf="@+id/inputPseudo"
-        app:layout_constraintTop_toBottomOf="@+id/inputPseudo" />
-
-    <EditText
-        android:id="@+id/inputLastName"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="1dp"
-        android:layout_marginTop="20dp"
-        android:background="@drawable/custom_input"
-        android:backgroundTint="#d2d8e9"
-        android:ems="10"
-        android:hint="Last name"
-        android:inputType="textPersonName"
-        android:padding="20px"
-        app:layout_constraintStart_toStartOf="@+id/inputFirstName"
-        app:layout_constraintTop_toBottomOf="@+id/inputFirstName" />
-
-    <EditText
-        android:id="@+id/inputAge"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:layout_marginEnd="1dp"
-        android:background="@drawable/custom_input"
-        android:backgroundTint="#d2d8e9"
-        android:ems="10"
-        android:hint="Age"
-        android:inputType="textPersonName"
-        android:padding="20px"
-        app:layout_constraintEnd_toEndOf="@+id/inputLastName"
-        app:layout_constraintTop_toBottomOf="@+id/inputLastName" />
-
-    <EditText
-        android:id="@+id/inputPhone"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="1dp"
-        android:layout_marginTop="20dp"
-        android:background="@drawable/custom_input"
-        android:backgroundTint="#d2d8e9"
-        android:ems="10"
-        android:hint="Phone"
-        android:inputType="textPersonName"
-        android:padding="20px"
-        app:layout_constraintStart_toStartOf="@+id/inputRegisterEmail"
-        app:layout_constraintTop_toBottomOf="@+id/inputAge" />
 
     <EditText
         android:id="@+id/inputRegisterEmail"
@@ -109,16 +33,14 @@
         android:hint="Email"
         android:inputType="textPersonName"
         android:padding="20px"
-        app:layout_constraintEnd_toEndOf="@+id/inputAge"
-        app:layout_constraintStart_toStartOf="@+id/inputAge"
-        app:layout_constraintTop_toBottomOf="@+id/inputPhone" />
+        app:layout_constraintStart_toStartOf="@+id/inputPseudo"
+        app:layout_constraintTop_toBottomOf="@+id/inputPseudo" />
 
     <EditText
         android:id="@+id/inputRegisterPassword"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
-        android:layout_marginEnd="1dp"
         android:background="@drawable/custom_input"
         android:backgroundTint="#d2d8e9"
         android:drawableStart="@drawable/ic_baseline_lock_24"
@@ -126,7 +48,7 @@
         android:hint=" Password"
         android:inputType="textPassword"
         android:padding="20px"
-        app:layout_constraintEnd_toEndOf="@+id/inputRegisterEmail"
+        app:layout_constraintStart_toStartOf="@+id/inputRegisterEmail"
         app:layout_constraintTop_toBottomOf="@+id/inputRegisterEmail"
         tools:ignore="MissingConstraints" />
 
@@ -149,11 +71,26 @@
         android:id="@+id/textView3"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="48dp"
-        android:layout_marginEnd="60dp"
+        android:layout_marginBottom="32dp"
         android:text="Register"
         android:textSize="24sp"
-        app:layout_constraintEnd_toEndOf="@+id/inputPseudo"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintBottom_toTopOf="@+id/inputPseudo"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/buttonRegister"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="37dp"
+        android:background="@drawable/custom_button"
+        android:onClick="createAccount"
+        android:paddingLeft="70px"
+        android:paddingRight="70px"
+        android:text="Register"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/inputConfirmPassword" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

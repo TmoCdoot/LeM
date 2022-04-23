@@ -33,18 +33,6 @@ public class Register extends AppCompatActivity {
         EditText userPseudo = findViewById(R.id.inputPseudo);
         String userPseudoToString = userPseudo.getText().toString();
 
-        EditText userFirstName = findViewById(R.id.inputFirstName);
-        String userFirstNameToString = userFirstName.getText().toString();
-
-        EditText userLastName = findViewById(R.id.inputLastName);
-        String userLastNameToString = userLastName.getText().toString();
-
-        EditText userAge = findViewById(R.id.inputAge);
-        String userAgeToString = userAge.getText().toString();
-
-        EditText userPhone = findViewById(R.id.inputPhone);
-        String userPhoneToString = userPhone.getText().toString();
-
         EditText userEmail = findViewById(R.id.inputRegisterEmail);
         String userEmailToString = userEmail.getText().toString();
 
@@ -54,7 +42,8 @@ public class Register extends AppCompatActivity {
         EditText userConfirmPassword = findViewById(R.id.inputConfirmPassword);
         String userConfirmPasswordToString = userConfirmPassword.getText().toString();
 
-        String url = "http://10.0.2.2/~timeo.cadouot/jumati/public/webservice/create_user?pseudo=" + userPseudoToString + "&firstname=" + userFirstNameToString + "&lastname=" + userLastNameToString + "&age=" + userAgeToString+ "&phone=" + userPhoneToString + "&email=" + userEmailToString + "&password=" + userRegisterPasswordToString + "&confirmpass=" + userConfirmPasswordToString;
+        //String url = "http://10.0.2.2/~timeo.cadouot/jumati/public/webservice/create_user?pseudo=" + userPseudoToString + "&firstname=" + userFirstNameToString + "&lastname=" + userLastNameToString + "&age=" + userAgeToString+ "&phone=" + userPhoneToString + "&email=" + userEmailToString + "&password=" + userRegisterPasswordToString + "&confirmpass=" + userConfirmPasswordToString;
+        String url = "http://10.0.2.2/Jumati/public/webservice/create_user?pseudo=" + userPseudoToString + "&email=" + userEmailToString + "&password=" + userRegisterPasswordToString + "&confirmpass=" + userConfirmPasswordToString;
         StringRequest stringRequest = new StringRequest(
                 Request.Method.GET,
                 url,

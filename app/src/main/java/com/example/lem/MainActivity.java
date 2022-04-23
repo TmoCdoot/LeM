@@ -37,7 +37,8 @@ public class MainActivity extends AppCompatActivity {
         EditText userEmail = findViewById(R.id.inputEmail);
         String userEmaiToString = userEmail.getText().toString();
 
-        String url = "http://10.0.2.2/~maxime.dumontet/jumati/public/webservice/get_data_user_with_email?email=" + userEmaiToString + "&mdp=" + userPasswordToString ;
+        //String url = "http://10.0.2.2/~maxime.dumontet/jumati/public/webservice/get_data_user_with_email?email=" + userEmaiToString + "&mdp=" + userPasswordToString ;
+        String url = "http://10.0.2.2/Jumati/public/webservice/get_data_user_with_email?email=" + userEmaiToString + "&mdp=" + userPasswordToString;
         StringRequest stringRequest = new StringRequest(
                 Request.Method.GET,
                 url,
@@ -69,7 +70,13 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(this,"Password incorrect", Toast.LENGTH_LONG).show();
                 } else {
                     //mdp correct
-                    UserClass user = new UserClass(String.valueOf(obj.getJSONObject(1).getString("user_id")), String.valueOf(obj.getJSONObject(1).getString("user_first_name")), String.valueOf(obj.getJSONObject(1).getString("user_last_name")), String.valueOf(obj.getJSONObject(1).getString("user_age")), String.valueOf(obj.getJSONObject(1).getString("user_phone")), String.valueOf(obj.getJSONObject(1).getString("user_email")));
+                    UserClass user = new UserClass(String.valueOf(obj.getJSONObject(1).getString("user_id")),
+                            String.valueOf(obj.getJSONObject(1).getString("user_email")),
+                            String.valueOf(obj.getJSONObject(1).getString("user_activity_id_join")),
+                            String.valueOf(obj.getJSONObject(1).getString("user_identifiant_add_friends")),
+                            String.valueOf(obj.getJSONObject(1).getString("user_pseudo")),
+                            String.valueOf(obj.getJSONObject(1).getString("user_activity_id_create")),
+                            String.valueOf(obj.getJSONObject(1).getString("user_statut")));
                     Intent home = new Intent(this, Home.class);
                     home.putExtra("user", (Serializable) user);
                     startActivity(home);
