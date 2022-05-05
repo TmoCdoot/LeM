@@ -37,8 +37,8 @@ public class MainActivity extends AppCompatActivity {
         EditText userEmail = findViewById(R.id.inputEmail);
         String userEmaiToString = userEmail.getText().toString();
 
-        //String url = "http://10.0.2.2/~maxime.dumontet/jumati/public/webservice/get_data_user_with_email?email=" + userEmaiToString + "&mdp=" + userPasswordToString ;
-        String url = "http://10.0.2.2/Jumati/public/webservice/get_data_user_with_email?email=" + userEmaiToString + "&mdp=" + userPasswordToString;
+        String url = "http://10.0.2.2/~timeo.cadouot/Jumati/public/webservice/get_data_user_with_email?email=" + userEmaiToString + "&mdp=" + userPasswordToString ;
+        //String url = "http://10.0.2.2/Jumati/public/webservice/get_data_user_with_email?email=" + userEmaiToString + "&mdp=" + userPasswordToString;
         StringRequest stringRequest = new StringRequest(
                 Request.Method.GET,
                 url,

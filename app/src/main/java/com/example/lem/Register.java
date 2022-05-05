@@ -42,8 +42,8 @@ public class Register extends AppCompatActivity {
         EditText userConfirmPassword = findViewById(R.id.inputConfirmPassword);
         String userConfirmPasswordToString = userConfirmPassword.getText().toString();
 
-        //String url = "http://10.0.2.2/~timeo.cadouot/jumati/public/webservice/create_user?pseudo=" + userPseudoToString + "&firstname=" + userFirstNameToString + "&lastname=" + userLastNameToString + "&age=" + userAgeToString+ "&phone=" + userPhoneToString + "&email=" + userEmailToString + "&password=" + userRegisterPasswordToString + "&confirmpass=" + userConfirmPasswordToString;
-        String url = "http://10.0.2.2/Jumati/public/webservice/create_user?pseudo=" + userPseudoToString + "&email=" + userEmailToString + "&password=" + userRegisterPasswordToString + "&confirmpass=" + userConfirmPasswordToString;
+        String url = "http://10.0.2.2/~timeo.cadouot/Jumati/public/webservice/create_user?pseudo=" + userPseudoToString + "&email=" + userEmailToString + "&password=" + userRegisterPasswordToString + "&confirmpass=" + userConfirmPasswordToString;
+        //String url = "http://10.0.2.2/Jumati/public/webservice/create_user?pseudo=" + userPseudoToString + "&email=" + userEmailToString + "&password=" + userRegisterPasswordToString + "&confirmpass=" + userConfirmPasswordToString;
         StringRequest stringRequest = new StringRequest(
                 Request.Method.GET,
                 url,

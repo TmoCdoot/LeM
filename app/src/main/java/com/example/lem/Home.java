@@ -1,6 +1,6 @@
 package com.example.lem;
 
-import static java.security.AccessController.getContext;
+import static java.lang.Double.parseDouble;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
@@ -66,6 +66,7 @@ public class Home extends AppCompatActivity implements Serializable {
     //map
     MapView map = null;
     private GeoPoint center = null;
+    private GeoPoint centertest = new GeoPoint(47.3592182, 1.7434925);
     //pour localisation gps
     private LocationManager locationManager;
     private LocationListener locationListener;
@@ -109,7 +110,8 @@ public class Home extends AppCompatActivity implements Serializable {
 
     //recuperation de friends de l'utilisateur connecter
     private void requestGetFriendsByUser() {
-        String url = "http://10.0.2.2/Jumati/public/webservice/get_data_friend?id=" + String.valueOf(user.getId_user());
+        String url = "http://10.0.2.2/~timeo.cadouot/Jumati/public/webservice/get_data_friend?id=" + String.valueOf(user.getId_user());
+        //String url = "http://10.0.2.2/Jumati/public/webservice/get_data_friend?id=" + String.valueOf(user.getId_user());
         StringRequest stringRequest = new StringRequest(
                 Request.Method.GET,
                 url,
@@ -126,7 +128,13 @@ public class Home extends AppCompatActivity implements Serializable {
                 countFriend = obj.length()-1;
                 for (int i = 1; i< obj.length(); i++) {
                     String id_friends = obj.getJSONObject(i).getString("dest_friend_user_id");
-                    String url = "http://10.0.2.2/Jumati/public/webservice/get_data_user_by_friend_id?id=" + id_friends;
+
+                    if (user.getId_user().equals(id_friends)) {
+                        id_friends = obj.getJSONObject(i).getString("exp_friend_user_id");
+                    }
+
+                    String url = "http://10.0.2.2/~timeo.cadouot/Jumati/public/webservice/get_data_user_by_friend_id?id=" + id_friends;
+                    //String url = "http://10.0.2.2/Jumati/public/webservice/get_data_user_by_friend_id?id=" + id_friends;
                     StringRequest stringRequest = new StringRequest(
                             Request.Method.GET,
                             url,
@@ -155,10 +163,13 @@ public class Home extends AppCompatActivity implements Serializable {
         } catch (JSONException e) {
             e.printStackTrace();
         }
+
+
+
         int countFriendList = mesFriends.size();
         if (countFriendList == countFriend) {
             readyToLoadEvenement = true;
-
+            Log.d("Listes friends", String.valueOf(mesFriends));
             //pour patienter avant qu'on ait développé tout ce qu'il faut pour les ws, on fait appel à une fausse méthode
             //fakeRequestEventsForUser("bob");
 
@@ -183,7 +194,7 @@ public class Home extends AppCompatActivity implements Serializable {
     }
 
     private void loadParamMapPermission() {
-        mesEvenements = null;
+        //mesEvenements = null;
 
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         locationListener = new LocationListener() {
@@ -196,7 +207,7 @@ public class Home extends AppCompatActivity implements Serializable {
                 //modeCreation(null);
 
                 //connexion user
-                Log.e("user", String.valueOf(user.getUser_email()));
+                //Log.e("user", String.valueOf(user.getUser_email()));
 
 
                 /*//pour patienter avant qu'on ait développé tout ce qu'il faut pour les ws, on fait appel à une fausse méthode*/
@@ -215,10 +226,11 @@ public class Home extends AppCompatActivity implements Serializable {
      * Récupère par web service les evennements que l'utilisateur doit voir
      * @return la liste des evennements que l'utilisateur doit voir
      */
+    //recuperation activité si utilisateur en a crée une
     private void requestEventsForUser(){
         for (int i = 0; i < mesFriends.size(); i++) {
-            Log.d("friend", String.valueOf(mesFriends.get(i).getFriend_pseudo()));
-            String url = "http://10.0.2.2/Jumati/public/webservice/get_data_activity_user?id=" + String.valueOf(mesFriends.get(i).getFriend_user_id()) ;
+            String url = "http://10.0.2.2/~timeo.cadouot/Jumati/public/webservice/get_data_activity_user?id=" + String.valueOf(mesFriends.get(i).getFriend_user_id()) ;
+            //String url = "http://10.0.2.2/Jumati/public/webservice/get_data_activity_user?id=" + String.valueOf(mesFriends.get(i).getFriend_user_id()) ;
             StringRequest stringRequest = new StringRequest(
                     Request.Method.GET,
                     url,
@@ -234,7 +246,9 @@ public class Home extends AppCompatActivity implements Serializable {
         try {
             JSONArray obj = new JSONArray(reponse);
             if (obj.getJSONObject(0).getString("activitesReturn").equals("1")) {
-                EvenementLocalise activity = new EvenementLocalise(obj.getJSONObject(1).getString("activity_id"),
+                EvenementLocalise activity = new EvenementLocalise(
+                        new GeoPoint(Double.parseDouble(obj.getJSONObject(1).getString("activity_latitude")), Double.parseDouble(obj.getJSONObject(1).getString("activity_longitude"))),
+                        obj.getJSONObject(1).getString("activity_id"),
                         obj.getJSONObject(1).getString("activity_id_creator"),
                         obj.getJSONObject(1).getString("activity_latitude"),
                         obj.getJSONObject(1).getString("activity_longitude"),
@@ -243,20 +257,21 @@ public class Home extends AppCompatActivity implements Serializable {
                         obj.getJSONObject(1).getString("activity_name"),
                         obj.getJSONObject(1).getString("category_id"),
                         obj.getJSONObject(1).getString("activity_view"));
-                Log.d("acti", String.valueOf(activity));
                 mesEvenements.add(activity);
-                //ajout dans liste marche pas
             }
         } catch (JSONException e) {
             getError(e);
         }
 
-        if (countFriend == mesEvenements.size()) {
-            Log.d("valid", "true");
+        if (mesEvenements != null) {
+            if (countFriend == mesEvenements.size()) {
+                Log.d("valid", "true");
+            }
         }
 
+
         //je demare la creation de la map
-        //startMap();
+        startMap();
     }
 
     public void getError(Throwable t) {
@@ -285,10 +300,20 @@ public class Home extends AppCompatActivity implements Serializable {
                 GeoPoint loc = (GeoPoint) proj.fromPixels((int)e.getX(), (int)e.getY());
 
                 //code de reaction au tap dans le mode creation
-                EvenementLocalise el = new EvenementLocalise(user.getId_user(), Double.toString(loc.getLatitude()), Double.toString(loc.getLongitude()),"nouvel evenement", "7", "OPEN", "4", null);
+                EvenementLocalise el = new EvenementLocalise(
+                        new GeoPoint(Double.parseDouble(String.valueOf(loc.getLatitude())),
+                                Double.parseDouble(String.valueOf(loc.getLongitude()))),
+                        user.getId_user(),
+                        Double.toString(loc.getLatitude()),
+                        Double.toString(loc.getLongitude()),
+                        "nouvel evenement",
+                        "7",
+                        "OPEN",
+                        "4",
+                        null);
                 //on ajoute l'evennement pour sauvegarde ulterieure (ou plutot on pourrait declencher directement la sauvegarde -- plus tard --)
                 mesEvenements.add(el);
-                //addMarkerFromEvennementLocalise(el);
+                addMarkerFromEvennementLocalise(el);
                 map.invalidate();
                 dlgThread();
                 return true;
@@ -344,25 +369,25 @@ public class Home extends AppCompatActivity implements Serializable {
         mapController.setZoom((int) 17);
 
         //positionnement du centre de la map
-        mapController.setCenter(center);
+
+        mapController.setCenter(centertest);
 
         // ajout de tous les points stockés dans mesEvenements
         for (EvenementLocalise e:mesEvenements){
-            //addMarkerFromEvennementLocalise(e);
+            addMarkerFromEvennementLocalise(e);
         }
 
         map.getOverlays().add(buildTouchOverlay());
     }
 
-    /*private void addMarkerFromEvennementLocalise(EvenementLocalise e){
+    private void addMarkerFromEvennementLocalise(EvenementLocalise e){
         Marker m=new Marker(map);
-        m.setPosition(e.getActivity_latitude(), e.getActivity_longitude());
-        Log.e("coordonnées", String.valueOf(e.getCoord()));
+        m.setPosition(e.getCoord());
         m.setTitle(e.getActivity_name());
         m.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
         map.getOverlays().add(m);
         m.setIcon(getResources().getDrawable(R.drawable.marker));
-    }*/
+    }
 
 
     /**
