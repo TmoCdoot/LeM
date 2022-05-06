@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Canvas;
@@ -22,8 +23,10 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import com.android.volley.Request;
@@ -110,7 +113,7 @@ public class Home extends AppCompatActivity implements Serializable {
 
     //recuperation des demande d'amis en attente
     private void requestGetDemandeFriends() {
-        String url = "http://10.0.2.2/~timeo.cadouot/Jumati/public/webservice/get_demande_friends?id=" + String.valueOf(user.getId_user());
+        String url = "http://10.0.2.2/~maxime.dumontet/Jumati/public/webservice/get_demande_friends?id=" + String.valueOf(user.getId_user());
         //String url = "http://10.0.2.2/Jumati/public/webservice/get_data_friend?id=" + String.valueOf(user.getId_user());
         StringRequest stringRequest = new StringRequest(
                 Request.Method.GET,
@@ -128,7 +131,7 @@ public class Home extends AppCompatActivity implements Serializable {
                 for (int i = 1; i< obj.length(); i++) {
                     String id_friends = obj.getJSONObject(i).getString("exp_friend_user_id");
 
-                    String url = "http://10.0.2.2/~timeo.cadouot/Jumati/public/webservice/get_data_user_by_friend_id?id=" + id_friends;
+                    String url = "http://10.0.2.2/~maxime.dumontet/Jumati/public/webservice/get_data_user_by_friend_id?id=" + id_friends;
                     //String url = "http://10.0.2.2/Jumati/public/webservice/get_data_user_by_friend_id?id=" + id_friends;
                     StringRequest stringRequest = new StringRequest(
                             Request.Method.GET,
@@ -162,7 +165,7 @@ public class Home extends AppCompatActivity implements Serializable {
 
     //recuperation de friends de l'utilisateur connecter
     private void requestGetFriendsByUser() {
-        String url = "http://10.0.2.2/~timeo.cadouot/Jumati/public/webservice/get_data_friend?id=" + String.valueOf(user.getId_user());
+        String url = "http://10.0.2.2/~maxime.dumontet/Jumati/public/webservice/get_data_friend?id=" + String.valueOf(user.getId_user());
         //String url = "http://10.0.2.2/Jumati/public/webservice/get_data_friend?id=" + String.valueOf(user.getId_user());
         StringRequest stringRequest = new StringRequest(
                 Request.Method.GET,
@@ -185,7 +188,7 @@ public class Home extends AppCompatActivity implements Serializable {
                         id_friends = obj.getJSONObject(i).getString("exp_friend_user_id");
                     }
 
-                    String url = "http://10.0.2.2/~timeo.cadouot/Jumati/public/webservice/get_data_user_by_friend_id?id=" + id_friends;
+                    String url = "http://10.0.2.2/~maxime.dumontet/Jumati/public/webservice/get_data_user_by_friend_id?id=" + id_friends;
                     //String url = "http://10.0.2.2/Jumati/public/webservice/get_data_user_by_friend_id?id=" + id_friends;
                     StringRequest stringRequest = new StringRequest(
                             Request.Method.GET,
@@ -270,7 +273,7 @@ public class Home extends AppCompatActivity implements Serializable {
     //recuperation activité si utilisateur en a crée une
     private void requestEventsForUser(){
         for (int i = 0; i < mesFriends.size(); i++) {
-            String url = "http://10.0.2.2/~timeo.cadouot/Jumati/public/webservice/get_data_activity_user?id=" + String.valueOf(mesFriends.get(i).getFriend_user_id()) ;
+            String url = "http://10.0.2.2/~maxime.dumontet/Jumati/public/webservice/get_data_activity_user?id=" + String.valueOf(mesFriends.get(i).getFriend_user_id()) ;
             //String url = "http://10.0.2.2/Jumati/public/webservice/get_data_activity_user?id=" + String.valueOf(mesFriends.get(i).getFriend_user_id()) ;
             StringRequest stringRequest = new StringRequest(
                     Request.Method.GET,
@@ -349,41 +352,51 @@ public class Home extends AppCompatActivity implements Serializable {
                 button_activity_confirm = popupActivityView.findViewById(R.id.button_confirmer);
                 button_activity_cancel = popupActivityView.findViewById(R.id.button_annuler);
 
+                final Spinner spinner = popupActivityView.findViewById(R.id.categorie_spinner);
+                // Create an ArrayAdapter using the string array and a default spinner layout
+                ArrayAdapter<String> adapter = new ArrayAdapter<String>(Home.this, android.R.layout.simple_spinner_item, getResources().getStringArray(R.array.categories_array));
+                // Specify the layout to use when the list of choices appears
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                // Apply the adapter to the spinner
+                spinner.setAdapter(adapter);
+
+                dialogBuilder.setPositiveButton("Confirmer", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        if (!spinner.getSelectedItem().toString().equalsIgnoreCase("Choisir une catégorie")) {
+                            ActivityClass el = new ActivityClass(
+                                    new GeoPoint(Double.parseDouble(String.valueOf(loc.getLatitude())),
+                                            Double.parseDouble(String.valueOf(loc.getLongitude()))),
+                                    user.getId_user(),
+                                    Double.toString(loc.getLatitude()),
+                                    Double.toString(loc.getLongitude()),
+                                    activity_name.getText().toString(),
+                                    activity_max_member.getText().toString(),
+                                    "OPEN",
+                                    spinner.getSelectedItem().toString(),
+                                    null);
+                            //on ajoute l'evennement pour sauvegarde ulterieure (ou plutot on pourrait declencher directement la sauvegarde -- plus tard --)
+                            mesEvenements.add(el);
+                            addMarkerFromEvennementLocalise(el);
+                            map.invalidate();
+                            dlgThread();
+                            dialog.dismiss();
+                        }
+                    }
+                });
+
+                dialogBuilder.setNegativeButton("Fermer", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                });
+
                 //set la view
                 dialogBuilder.setView(popupActivityView);
                 dialog = dialogBuilder.create();
                 dialog.show();
 
-                //si l'utilisateur clic sur save alors enregistre une nouvelle activité
-                button_activity_confirm.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        ActivityClass el = new ActivityClass(
-                                new GeoPoint(Double.parseDouble(String.valueOf(loc.getLatitude())),
-                                        Double.parseDouble(String.valueOf(loc.getLongitude()))),
-                                user.getId_user(),
-                                Double.toString(loc.getLatitude()),
-                                Double.toString(loc.getLongitude()),
-                                activity_name.getText().toString(),
-                                activity_max_member.getText().toString(),
-                                "OPEN",
-                                "4",
-                                null);
-                        //on ajoute l'evennement pour sauvegarde ulterieure (ou plutot on pourrait declencher directement la sauvegarde -- plus tard --)
-                        mesEvenements.add(el);
-                        addMarkerFromEvennementLocalise(el);
-                        map.invalidate();
-                        dlgThread();
-                    }
-                });
-
-                //si l'utilisateur click sur annuler
-                button_activity_cancel.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        dialog.dismiss();
-                    }
-                });
                 return true;
             }
         };
@@ -435,11 +448,10 @@ public class Home extends AppCompatActivity implements Serializable {
 
     //ajout amis
     public void test(View v) {
-        RecyclerView viewRecyclerBook = (RecyclerView) findViewById(R.id.recyclerViewDemandeFriend);
-
-
         dialogBuilder = new AlertDialog.Builder(this);
         final View friendPopUp = getLayoutInflater().inflate(R.layout.popup_friend, null);
+
+        RecyclerView viewRecyclerBook = (RecyclerView) friendPopUp.findViewById(R.id.recyclerViewDemandeFriend);
 
         dialogBuilder.setView(friendPopUp);
         dialog = dialogBuilder.create();
@@ -465,7 +477,7 @@ public class Home extends AppCompatActivity implements Serializable {
             public void onClick(View view) {
                 String pseudoFriends = pseudoAddFriends.getText().toString();
 
-                String url = "http://10.0.2.2/~timeo.cadouot/Jumati/public/webservice/get_data_user_by_pseudo?pseudo=" + pseudoFriends + "&exp=" + user.getId_user() ;
+                String url = "http://10.0.2.2/~maxime.dumontet/Jumati/public/webservice/get_data_user_by_pseudo?pseudo=" + pseudoFriends + "&exp=" + user.getId_user() ;
                 //String url = "http://10.0.2.2/Jumati/public/webservice/get_data_user_with_email?email=" + userEmaiToString + "&mdp=" + userPasswordToString;
                 StringRequest stringRequest = new StringRequest(
                         Request.Method.GET,

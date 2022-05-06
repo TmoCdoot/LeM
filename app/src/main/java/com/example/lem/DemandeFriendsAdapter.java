@@ -38,6 +38,10 @@ public class DemandeFriendsAdapter extends RecyclerView.Adapter<DemandeFriendsHo
 
     @Override
     public int getItemCount() {
-        return demandeFriends.size();
+        if (demandeFriends == null) {
+            return 0;
+        } else {
+            return demandeFriends.size();
+        }
     }
 }
