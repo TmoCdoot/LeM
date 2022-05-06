@@ -1,38 +1,29 @@
 package com.example.lem;
 
-import static java.lang.Double.parseDouble;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.viewpager.widget.ViewPager;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.content.Context;
-import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.res.Resources;
 import android.graphics.Canvas;
-import android.graphics.drawable.Drawable;
-import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.TableLayout;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import com.android.volley.Request;
@@ -42,20 +33,16 @@ import com.android.volley.toolbox.Volley;
 
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 import org.osmdroid.api.IMapController;
 import org.osmdroid.config.Configuration;
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.Projection;
 import org.osmdroid.views.overlay.ItemizedIconOverlay;
-import org.osmdroid.views.overlay.ItemizedOverlayWithFocus;
 import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.Overlay;
 import org.osmdroid.views.overlay.OverlayItem;
 
-import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -71,13 +58,26 @@ public class Home extends AppCompatActivity implements Serializable {
     private LocationManager locationManager;
     private LocationListener locationListener;
     //list activity
-    private ArrayList<EvenementLocalise> mesEvenements = new ArrayList<>();
+    private ArrayList<ActivityClass> mesEvenements = new ArrayList<>();
     //list friend
     private ArrayList<FriendsClass> mesFriends = new ArrayList<>();
     private int countFriend;
     private boolean readyToLoadEvenement = false;
     //user
     private UserClass user;
+
+    //ajout amis
+    private AlertDialog.Builder dialogBuilder;
+    private AlertDialog dialog;
+    private EditText pseudoAddFriends;
+    private Button buttonClose, buttonAddFriends;
+
+    //demande amis en recu
+    private List<FriendsClass> demandeFriends;
+
+    //ajout activité
+    private EditText activity_name, activity_max_member;
+    private Button button_activity_confirm, button_activity_cancel;
 
 
     @RequiresApi(api = Build.VERSION_CODES.M)
@@ -91,6 +91,7 @@ public class Home extends AppCompatActivity implements Serializable {
 
         //recuperation des friends de l'utilisateur
         requestGetFriendsByUser();
+        requestGetDemandeFriends();
 
         //definir permission localisation
         if (ActivityCompat.checkSelfPermission(this,
@@ -106,6 +107,57 @@ public class Home extends AppCompatActivity implements Serializable {
             loadParamMapPermission();
         }
     }
+
+    //recuperation des demande d'amis en attente
+    private void requestGetDemandeFriends() {
+        String url = "http://10.0.2.2/~timeo.cadouot/Jumati/public/webservice/get_demande_friends?id=" + String.valueOf(user.getId_user());
+        //String url = "http://10.0.2.2/Jumati/public/webservice/get_data_friend?id=" + String.valueOf(user.getId_user());
+        StringRequest stringRequest = new StringRequest(
+                Request.Method.GET,
+                url,
+                this::procesDemandeFriends,
+                this::getError);
+        fileRequeteWS.add(stringRequest);
+    }
+
+    //traite le resultat et les mets dans des tableaux
+    private void procesDemandeFriends(String reponse) {
+        try {
+            JSONArray obj = new JSONArray(reponse);
+            if (obj.getJSONObject(0).getString("demandeReturn").equals("1")) {
+                for (int i = 1; i< obj.length(); i++) {
+                    String id_friends = obj.getJSONObject(i).getString("exp_friend_user_id");
+
+                    String url = "http://10.0.2.2/~timeo.cadouot/Jumati/public/webservice/get_data_user_by_friend_id?id=" + id_friends;
+                    //String url = "http://10.0.2.2/Jumati/public/webservice/get_data_user_by_friend_id?id=" + id_friends;
+                    StringRequest stringRequest = new StringRequest(
+                            Request.Method.GET,
+                            url,
+                            this::procesDemandeFriendsIdResult,
+                            this::getError);
+                    fileRequeteWS.add(stringRequest);
+                }
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    //traite resultate recuperation info demandeur d'amis et ajout dans tableau
+    private void procesDemandeFriendsIdResult(String reponse) {
+        try {
+            JSONArray obj = new JSONArray(reponse);
+            FriendsClass friend = new FriendsClass(obj.getJSONObject(1).getString("user_id"),
+                    obj.getJSONObject(1).getString("user_pseudo"),
+                    obj.getJSONObject(1).getString("user_activity_id_create"),
+                    obj.getJSONObject(1).getString("user_activity_id_join"));
+            demandeFriends.add(friend);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
 
 
     //recuperation de friends de l'utilisateur connecter
@@ -203,19 +255,8 @@ public class Home extends AppCompatActivity implements Serializable {
                 Log.d("gps", location.getLatitude() + "   " + location.getLongitude());
                 center = new GeoPoint(location.getLatitude(), location.getLongitude());
 
-                //je place mon ui en mode visualisation
-                //modeCreation(null);
-
                 //connexion user
                 //Log.e("user", String.valueOf(user.getUser_email()));
-
-
-                /*//pour patienter avant qu'on ait développé tout ce qu'il faut pour les ws, on fait appel à une fausse méthode*/
-                //fakeRequestEventsForUser("bob");
-
-
-                //test recuperation des activités depuis ws
-                //requestEventsForUser(String.valueOf(user.getId_user()));
             }
         };
         locationManager.requestLocationUpdates("gps", 0, 1000, locationListener);
@@ -246,7 +287,7 @@ public class Home extends AppCompatActivity implements Serializable {
         try {
             JSONArray obj = new JSONArray(reponse);
             if (obj.getJSONObject(0).getString("activitesReturn").equals("1")) {
-                EvenementLocalise activity = new EvenementLocalise(
+                ActivityClass activity = new ActivityClass(
                         new GeoPoint(Double.parseDouble(obj.getJSONObject(1).getString("activity_latitude")), Double.parseDouble(obj.getJSONObject(1).getString("activity_longitude"))),
                         obj.getJSONObject(1).getString("activity_id"),
                         obj.getJSONObject(1).getString("activity_id_creator"),
@@ -299,49 +340,51 @@ public class Home extends AppCompatActivity implements Serializable {
                 Projection proj = mapView.getProjection();
                 GeoPoint loc = (GeoPoint) proj.fromPixels((int)e.getX(), (int)e.getY());
 
-                //code de reaction au tap dans le mode creation
-                EvenementLocalise el = new EvenementLocalise(
-                        new GeoPoint(Double.parseDouble(String.valueOf(loc.getLatitude())),
-                                Double.parseDouble(String.valueOf(loc.getLongitude()))),
-                        user.getId_user(),
-                        Double.toString(loc.getLatitude()),
-                        Double.toString(loc.getLongitude()),
-                        "nouvel evenement",
-                        "7",
-                        "OPEN",
-                        "4",
-                        null);
-                //on ajoute l'evennement pour sauvegarde ulterieure (ou plutot on pourrait declencher directement la sauvegarde -- plus tard --)
-                mesEvenements.add(el);
-                addMarkerFromEvennementLocalise(el);
-                map.invalidate();
-                dlgThread();
-                return true;
+                //instanciation des variables
+                dialogBuilder = new AlertDialog.Builder(Home.this);
+                final View popupActivityView = getLayoutInflater().inflate(R.layout.popup_create_activity, null);
+                activity_name = popupActivityView.findViewById(R.id.activity_name);
+                activity_max_member = popupActivityView.findViewById(R.id.activity_max_member);
 
+                button_activity_confirm = popupActivityView.findViewById(R.id.button_confirmer);
+                button_activity_cancel = popupActivityView.findViewById(R.id.button_annuler);
 
-                /*switch(etat){
-                    case VISUALISATION:
-                        //code de reaction au tap dans le mode visualisation
-                        EvenementLocalise elo=nearest(loc);
-                        if(null!=elo){
-                            Toast.makeText(getApplicationContext(),elo.getDescr(),Toast.LENGTH_LONG).show();
-                        }
-                        break;
-                    case EDITION:
-                        //code de reaction au tap dans le mode edition
-                        break;
-                    case SUPPRESSION:
-                        //code de reaction au tap dans le mode supression
-                        break;
-                    case CREATION:
-                        //code de reaction au tap dans le mode creation
-                        EvenementLocalise el = new EvenementLocalise(loc,"nouvel evenement");
+                //set la view
+                dialogBuilder.setView(popupActivityView);
+                dialog = dialogBuilder.create();
+                dialog.show();
+
+                //si l'utilisateur clic sur save alors enregistre une nouvelle activité
+                button_activity_confirm.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        ActivityClass el = new ActivityClass(
+                                new GeoPoint(Double.parseDouble(String.valueOf(loc.getLatitude())),
+                                        Double.parseDouble(String.valueOf(loc.getLongitude()))),
+                                user.getId_user(),
+                                Double.toString(loc.getLatitude()),
+                                Double.toString(loc.getLongitude()),
+                                activity_name.getText().toString(),
+                                activity_max_member.getText().toString(),
+                                "OPEN",
+                                "4",
+                                null);
                         //on ajoute l'evennement pour sauvegarde ulterieure (ou plutot on pourrait declencher directement la sauvegarde -- plus tard --)
                         mesEvenements.add(el);
                         addMarkerFromEvennementLocalise(el);
+                        map.invalidate();
+                        dlgThread();
+                    }
+                });
 
-                        break;
-                }*/
+                //si l'utilisateur click sur annuler
+                button_activity_cancel.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        dialog.dismiss();
+                    }
+                });
+                return true;
             }
         };
         return touchOverlay;
@@ -373,14 +416,14 @@ public class Home extends AppCompatActivity implements Serializable {
         mapController.setCenter(centertest);
 
         // ajout de tous les points stockés dans mesEvenements
-        for (EvenementLocalise e:mesEvenements){
+        for (ActivityClass e:mesEvenements){
             addMarkerFromEvennementLocalise(e);
         }
 
         map.getOverlays().add(buildTouchOverlay());
     }
 
-    private void addMarkerFromEvennementLocalise(EvenementLocalise e){
+    private void addMarkerFromEvennementLocalise(ActivityClass e){
         Marker m=new Marker(map);
         m.setPosition(e.getCoord());
         m.setTitle(e.getActivity_name());
@@ -389,6 +432,69 @@ public class Home extends AppCompatActivity implements Serializable {
         m.setIcon(getResources().getDrawable(R.drawable.marker));
     }
 
+
+    //ajout amis
+    public void test(View v) {
+        RecyclerView viewRecyclerBook = (RecyclerView) findViewById(R.id.recyclerViewDemandeFriend);
+
+
+        dialogBuilder = new AlertDialog.Builder(this);
+        final View friendPopUp = getLayoutInflater().inflate(R.layout.popup_friend, null);
+
+        dialogBuilder.setView(friendPopUp);
+        dialog = dialogBuilder.create();
+        dialog.show();
+
+        DemandeFriendsAdapter adapter = new DemandeFriendsAdapter(demandeFriends);
+        viewRecyclerBook.setAdapter(adapter);
+        viewRecyclerBook.setLayoutManager(new LinearLayoutManager(this));
+
+        pseudoAddFriends = (EditText) friendPopUp.findViewById(R.id.pseudoAddFriends);
+        buttonAddFriends = (Button) friendPopUp.findViewById(R.id.buttonAddFriends);
+        buttonClose = (Button) friendPopUp.findViewById(R.id.buttonClose);
+
+        buttonClose.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dialog.dismiss();
+            }
+        });
+
+        buttonAddFriends.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String pseudoFriends = pseudoAddFriends.getText().toString();
+
+                String url = "http://10.0.2.2/~timeo.cadouot/Jumati/public/webservice/get_data_user_by_pseudo?pseudo=" + pseudoFriends + "&exp=" + user.getId_user() ;
+                //String url = "http://10.0.2.2/Jumati/public/webservice/get_data_user_with_email?email=" + userEmaiToString + "&mdp=" + userPasswordToString;
+                StringRequest stringRequest = new StringRequest(
+                        Request.Method.GET,
+                        url,
+                        this::parceResultAddFriends,
+                        this::getError
+                );
+                fileRequeteWS.add(stringRequest);
+            }
+
+            private void parceResultAddFriends(String reponse) {
+                try {
+                    JSONArray obj = new JSONArray(reponse);
+                    if (obj.getJSONObject(0).getString("usersReturn").equals("1")) {
+                        Toast.makeText(Home.this, "Demande envoyé", Toast.LENGTH_LONG).show();
+                    } else {
+                        Toast.makeText(Home.this, "Utilisateur introuvable", Toast.LENGTH_LONG).show();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+            }
+
+            public void getError(Throwable t) {
+                Log.e("CONNECT", "Problème communication serveur", t);
+            }
+        });
+    }
 
     /**
      * Simule la recuperation des evenements par ws

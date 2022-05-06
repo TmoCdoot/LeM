@@ -2,7 +2,7 @@ package com.example.lem;
 
 import org.osmdroid.util.GeoPoint;
 
-public class EvenementLocalise {
+public class ActivityClass {
 
     private GeoPoint coord;
     private String activity_id;
@@ -15,7 +15,7 @@ public class EvenementLocalise {
     private String activity_category_id;
     private String activity_view;
 
-    public EvenementLocalise(GeoPoint coord, String activity_id, String activity_id_creator, String activity_latitude, String activity_longitude, String activity_name, String activity_max_number, String activity_status, String activity_category_id, String activity_view) {
+    public ActivityClass(GeoPoint coord, String activity_id, String activity_id_creator, String activity_latitude, String activity_longitude, String activity_name, String activity_max_number, String activity_status, String activity_category_id, String activity_view) {
         this.coord = coord;
         this.activity_id = activity_id;
         this.activity_id_creator = activity_id_creator;
@@ -28,7 +28,7 @@ public class EvenementLocalise {
         this.activity_view = activity_view;
     }
 
-    public EvenementLocalise(GeoPoint coord, String activity_id_creator, String activity_latitude, String activity_longitude, String activity_name, String activity_max_number, String activity_status, String activity_category_id, String activity_view) {
+    public ActivityClass(GeoPoint coord, String activity_id_creator, String activity_latitude, String activity_longitude, String activity_name, String activity_max_number, String activity_status, String activity_category_id, String activity_view) {
         this.coord = coord;
         this.activity_id_creator = activity_id_creator;
         this.activity_latitude = activity_latitude;

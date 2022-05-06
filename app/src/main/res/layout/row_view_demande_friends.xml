@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+    <TextView
+        android:id="@+id/pseudoDemandeur"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Pseudo"
+        tools:layout_editor_absoluteX="16dp"
+        tools:layout_editor_absoluteY="19dp" />
+
+    <Button
+        android:id="@+id/buttonAccepterDemande"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Accepter"
+        tools:layout_editor_absoluteX="170dp"
+        tools:layout_editor_absoluteY="9dp" />
+
+    <Button
+        android:id="@+id/buttonRefuserDemande"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Décliner"
+        tools:layout_editor_absoluteX="298dp"
+        tools:layout_editor_absoluteY="9dp" />
+</androidx.constraintlayout.widget.ConstraintLayout>
