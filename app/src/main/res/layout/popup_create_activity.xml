@@ -3,56 +3,47 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="wrap_content">
 
     <EditText
         android:id="@+id/activity_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="40dp"
-        android:layout_marginTop="100dp"
+        android:layout_marginTop="20dp"
         android:hint="Nom"
         android:textSize="24dp"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/textView6"
+        tools:layout_editor_absoluteX="40dp" />
 
     <EditText
         android:id="@+id/activity_max_member"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="40dp"
-        android:layout_marginTop="100dp"
+        android:layout_marginTop="20dp"
         android:hint="Membres maximum"
-        app:layout_constraintTop_toBottomOf="@+id/activity_name" />
+        app:layout_constraintTop_toBottomOf="@+id/activity_name"
+        tools:layout_editor_absoluteX="40dp" />
 
     <Spinner
         android:id="@+id/categorie_spinner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="40dp"
-        android:layout_marginTop="100dp"
-        app:layout_constraintTop_toBottomOf="@+id/activity_max_member" />
+        android:layout_marginTop="20dp"
+        app:layout_constraintTop_toBottomOf="@+id/activity_max_member"
+        tools:layout_editor_absoluteX="40dp" />
 
-    <Button
-        android:id="@+id/button_annuler"
+    <TextView
+        android:id="@+id/textView6"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:hint="Annuler"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginTop="20dp"
+        android:text="Ajouter une activité"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.875"
-        app:layout_constraintStart_toEndOf="@+id/button_confirmer"
-        app:layout_constraintTop_toBottomOf="@+id/categorie_spinner" />
-
-    <Button
-        android:id="@+id/button_confirmer"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:hint="Confirmer"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.131"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/categorie_spinner" />
+        app:layout_constraintTop_toTopOf="parent" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -5,13 +5,12 @@
       <map>
         <entry key="..\:/Users/griva.DESKTOP-STN29TD/StudioProjects/LeM/app/src/main/res/layout/activity_register.xml" value="0.36666666666666664" />
         <entry key="app/src/main/res/drawable/ic_baseline_lock_24.xml" value="0.21614583333333334" />
-        <entry key="app/src/main/res/layout/activity_home.xml" value="0.33" />
+        <entry key="app/src/main/res/layout/activity_home.xml" value="0.35833333333333334" />
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.34322916666666664" />
         <entry key="app/src/main/res/layout/activity_register.xml" value="0.33" />
-        <entry key="app/src/main/res/layout/popup_add_friends.xml" value="0.3446557971014493" />
-        <entry key="app/src/main/res/layout/popup_create_activity.xml" value="0.35833333333333334" />
-        <entry key="app/src/main/res/layout/popup_friend.xml" value="0.5" />
-        <entry key="app/src/main/res/layout/row_view_demande_friends.xml" value="0.67" />
+        <entry key="app/src/main/res/layout/popup_create_activity.xml" value="0.353125" />
+        <entry key="app/src/main/res/layout/popup_friend.xml" value="0.3375" />
+        <entry key="app/src/main/res/layout/row_view_demande_friends.xml" value="0.3375" />
       </map>
     </option>
   </component>

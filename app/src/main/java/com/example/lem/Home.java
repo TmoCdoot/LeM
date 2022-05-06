@@ -80,7 +80,6 @@ public class Home extends AppCompatActivity implements Serializable {
 
     //ajout activité
     private EditText activity_name, activity_max_member;
-    private Button button_activity_confirm, button_activity_cancel;
 
 
     @RequiresApi(api = Build.VERSION_CODES.M)
@@ -127,6 +126,7 @@ public class Home extends AppCompatActivity implements Serializable {
     private void procesDemandeFriends(String reponse) {
         try {
             JSONArray obj = new JSONArray(reponse);
+            Log.d("ze", String.valueOf(obj));
             if (obj.getJSONObject(0).getString("demandeReturn").equals("1")) {
                 for (int i = 1; i< obj.length(); i++) {
                     String id_friends = obj.getJSONObject(i).getString("exp_friend_user_id");
@@ -349,9 +349,6 @@ public class Home extends AppCompatActivity implements Serializable {
                 activity_name = popupActivityView.findViewById(R.id.activity_name);
                 activity_max_member = popupActivityView.findViewById(R.id.activity_max_member);
 
-                button_activity_confirm = popupActivityView.findViewById(R.id.button_confirmer);
-                button_activity_cancel = popupActivityView.findViewById(R.id.button_annuler);
-
                 final Spinner spinner = popupActivityView.findViewById(R.id.categorie_spinner);
                 // Create an ArrayAdapter using the string array and a default spinner layout
                 ArrayAdapter<String> adapter = new ArrayAdapter<String>(Home.this, android.R.layout.simple_spinner_item, getResources().getStringArray(R.array.categories_array));
@@ -377,11 +374,46 @@ public class Home extends AppCompatActivity implements Serializable {
                                     null);
                             //on ajoute l'evennement pour sauvegarde ulterieure (ou plutot on pourrait declencher directement la sauvegarde -- plus tard --)
                             mesEvenements.add(el);
+
+                            String url = "http://10.0.2.2/~maxime.dumontet/Jumati/public/webservice/create_activity?id_creator="
+                                    + user.getId_user()
+                                    + "&lati=" + loc.getLatitude()
+                                    + "&longi=" + loc.getLongitude()
+                                    + "&max_member=" + activity_max_member.getText().toString()
+                                    + "&status=OPEN"
+                                    + "&name=" + activity_name.getText().toString()
+                                    + "&category=" + spinner.getSelectedItem().toString()
+                                    + "&view=null";
+                            //String url = "http://10.0.2.2/Jumati/public/webservice/get_data_activity_user?id=" + String.valueOf(mesFriends.get(i).getFriend_user_id()) ;
+                            StringRequest stringRequest = new StringRequest(
+                                    Request.Method.GET,
+                                    url,
+                                    this::processAddActivityResult,
+                                    this::getError);
+                            fileRequeteWS.add(stringRequest);
+
                             addMarkerFromEvennementLocalise(el);
                             map.invalidate();
                             dlgThread();
                             dialog.dismiss();
                         }
+                    }
+
+                    private void processAddActivityResult(String reponse) {
+                        try {
+                            JSONArray obj = new JSONArray(reponse);
+                            if (obj.getJSONObject(0).getString("activityAddReturn").equals("1")) {
+                                Toast.makeText(Home.this, "Activité crée", Toast.LENGTH_LONG).show();
+                            } else {
+                                Toast.makeText(Home.this, "problème ajout activité", Toast.LENGTH_LONG).show();
+                            }
+                        } catch (Exception exception) {
+                            exception.printStackTrace();
+                        }
+                    }
+
+                    public void getError(Throwable t) {
+                        Log.e("categorie", "probleme serveur", t);
                     }
                 });
 
@@ -457,6 +489,7 @@ public class Home extends AppCompatActivity implements Serializable {
         dialog = dialogBuilder.create();
         dialog.show();
 
+        Log.d("test", String.valueOf(demandeFriends));
         DemandeFriendsAdapter adapter = new DemandeFriendsAdapter(demandeFriends);
         viewRecyclerBook.setAdapter(adapter);
         viewRecyclerBook.setLayoutManager(new LinearLayoutManager(this));
