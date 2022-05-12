@@ -3,11 +3,21 @@ package com.example.lem;
 import java.io.Serializable;
 
 public class FriendsClass implements Serializable {
-
+    private String friend_id_demande;
     private String friend_user_id;
     private String friend_pseudo;
     private String friend_activity_id_create;
     private String friend_activity_id_join;
+
+
+
+    public FriendsClass(String friend_id_demande, String friend_user_id, String friend_pseudo, String friend_activity_id_create, String friend_activity_id_join) {
+        this.friend_id_demande = friend_id_demande;
+        this.friend_user_id = friend_user_id;
+        this.friend_pseudo = friend_pseudo;
+        this.friend_activity_id_create = friend_activity_id_create;
+        this.friend_activity_id_join = friend_activity_id_join;
+    }
 
     public FriendsClass(String friend_user_id, String friend_pseudo, String friend_activity_id_create, String friend_activity_id_join) {
         this.friend_user_id = friend_user_id;
@@ -32,4 +42,7 @@ public class FriendsClass implements Serializable {
         return friend_activity_id_join;
     }
 
+    public String getFriend_id_demande() {
+        return friend_id_demande;
+    }
 }

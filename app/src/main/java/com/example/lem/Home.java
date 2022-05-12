@@ -50,22 +50,27 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Home extends AppCompatActivity implements Serializable {
+public class Home extends AppCompatActivity implements Serializable, DemandeFriendsInterface {
 
     RequestQueue fileRequeteWS;
+
     //map
     MapView map = null;
     private GeoPoint center = null;
     private GeoPoint centertest = new GeoPoint(47.3592182, 1.7434925);
+
     //pour localisation gps
     private LocationManager locationManager;
     private LocationListener locationListener;
+
     //list activity
     private ArrayList<ActivityClass> mesEvenements = new ArrayList<>();
+
     //list friend
     private ArrayList<FriendsClass> mesFriends = new ArrayList<>();
     private int countFriend;
     private boolean readyToLoadEvenement = false;
+
     //user
     private UserClass user;
 
@@ -73,10 +78,10 @@ public class Home extends AppCompatActivity implements Serializable {
     private AlertDialog.Builder dialogBuilder;
     private AlertDialog dialog;
     private EditText pseudoAddFriends;
-    private Button buttonClose, buttonAddFriends;
+    private Button buttonAddFriends;
 
     //demande amis en recu
-    private List<FriendsClass> demandeFriends;
+    private ArrayList<FriendsClass> demandeFriends = new ArrayList<>();
 
     //ajout activité
     private EditText activity_name, activity_max_member;
@@ -110,9 +115,14 @@ public class Home extends AppCompatActivity implements Serializable {
         }
     }
 
+
+    /**
+     * Récupère les demande d'amis de l'utilisateur
+     */
     //recuperation des demande d'amis en attente
     private void requestGetDemandeFriends() {
-        String url = "http://10.0.2.2/~maxime.dumontet/Jumati/public/webservice/get_demande_friends?id=" + String.valueOf(user.getId_user());
+        demandeFriends = new ArrayList<>();
+        String url = "http://10.0.2.2/~timeo.cadouot/Jumati/public/webservice/get_demande_friends?id=" + String.valueOf(user.getId_user());
         //String url = "http://10.0.2.2/Jumati/public/webservice/get_data_friend?id=" + String.valueOf(user.getId_user());
         StringRequest stringRequest = new StringRequest(
                 Request.Method.GET,
@@ -126,12 +136,12 @@ public class Home extends AppCompatActivity implements Serializable {
     private void procesDemandeFriends(String reponse) {
         try {
             JSONArray obj = new JSONArray(reponse);
-            Log.d("ze", String.valueOf(obj));
             if (obj.getJSONObject(0).getString("demandeReturn").equals("1")) {
                 for (int i = 1; i< obj.length(); i++) {
                     String id_friends = obj.getJSONObject(i).getString("exp_friend_user_id");
+                    String id_friend_demande = obj.getJSONObject(i).getString("friend_id");
 
-                    String url = "http://10.0.2.2/~maxime.dumontet/Jumati/public/webservice/get_data_user_by_friend_id?id=" + id_friends;
+                    String url = "http://10.0.2.2/~timeo.cadouot/Jumati/public/webservice/get_data_user_by_friend_id?id=" + id_friends + "&iddemande=" + id_friend_demande;
                     //String url = "http://10.0.2.2/Jumati/public/webservice/get_data_user_by_friend_id?id=" + id_friends;
                     StringRequest stringRequest = new StringRequest(
                             Request.Method.GET,
@@ -150,22 +160,27 @@ public class Home extends AppCompatActivity implements Serializable {
     private void procesDemandeFriendsIdResult(String reponse) {
         try {
             JSONArray obj = new JSONArray(reponse);
-            FriendsClass friend = new FriendsClass(obj.getJSONObject(1).getString("user_id"),
+            FriendsClass friend = new FriendsClass(obj.getJSONObject(0).getString("id_demande"),
+                    obj.getJSONObject(1).getString("user_id"),
                     obj.getJSONObject(1).getString("user_pseudo"),
                     obj.getJSONObject(1).getString("user_activity_id_create"),
                     obj.getJSONObject(1).getString("user_activity_id_join"));
             demandeFriends.add(friend);
+
+            //Log.d("list demande", String.valueOf(demandeFriends));
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
 
-
-
+    /**
+     * Récupère les amis de l'utilisateur
+     */
     //recuperation de friends de l'utilisateur connecter
     private void requestGetFriendsByUser() {
-        String url = "http://10.0.2.2/~maxime.dumontet/Jumati/public/webservice/get_data_friend?id=" + String.valueOf(user.getId_user());
+        mesFriends = new ArrayList<>();
+        String url = "http://10.0.2.2/~timeo.cadouot/Jumati/public/webservice/get_data_friend?id=" + String.valueOf(user.getId_user());
         //String url = "http://10.0.2.2/Jumati/public/webservice/get_data_friend?id=" + String.valueOf(user.getId_user());
         StringRequest stringRequest = new StringRequest(
                 Request.Method.GET,
@@ -188,7 +203,7 @@ public class Home extends AppCompatActivity implements Serializable {
                         id_friends = obj.getJSONObject(i).getString("exp_friend_user_id");
                     }
 
-                    String url = "http://10.0.2.2/~maxime.dumontet/Jumati/public/webservice/get_data_user_by_friend_id?id=" + id_friends;
+                    String url = "http://10.0.2.2/~timeo.cadouot/Jumati/public/webservice/get_data_user_by_friend_id?id=" + id_friends;
                     //String url = "http://10.0.2.2/Jumati/public/webservice/get_data_user_by_friend_id?id=" + id_friends;
                     StringRequest stringRequest = new StringRequest(
                             Request.Method.GET,
@@ -198,7 +213,9 @@ public class Home extends AppCompatActivity implements Serializable {
                     fileRequeteWS.add(stringRequest);
                 }
             } else {
-                Toast.makeText(this,"Pas d'amis", Toast.LENGTH_LONG).show();
+                //Toast.makeText(this,"Pas d'amis", Toast.LENGTH_LONG).show();
+                readyToLoadEvenement = true;
+                startMap();
             }
 
         } catch (JSONException e) {
@@ -224,9 +241,7 @@ public class Home extends AppCompatActivity implements Serializable {
         int countFriendList = mesFriends.size();
         if (countFriendList == countFriend) {
             readyToLoadEvenement = true;
-            Log.d("Listes friends", String.valueOf(mesFriends));
-            //pour patienter avant qu'on ait développé tout ce qu'il faut pour les ws, on fait appel à une fausse méthode
-            //fakeRequestEventsForUser("bob");
+            //Log.d("Listes friends", String.valueOf(mesFriends));
 
             //test recuperation des activités depuis ws
             requestEventsForUser();
@@ -234,7 +249,9 @@ public class Home extends AppCompatActivity implements Serializable {
     }
 
 
-
+    /**
+     * parametre de la location de l'utilisateur
+     */
     //si user accepter la location alors load map
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -255,7 +272,7 @@ public class Home extends AppCompatActivity implements Serializable {
         locationListener = new LocationListener() {
             @Override
             public void onLocationChanged(@NonNull Location location) {
-                Log.d("gps", location.getLatitude() + "   " + location.getLongitude());
+                //Log.d("gps", location.getLatitude() + "   " + location.getLongitude());
                 center = new GeoPoint(location.getLatitude(), location.getLongitude());
 
                 //connexion user
@@ -270,17 +287,26 @@ public class Home extends AppCompatActivity implements Serializable {
      * Récupère par web service les evennements que l'utilisateur doit voir
      * @return la liste des evennements que l'utilisateur doit voir
      */
-    //recuperation activité si utilisateur en a crée une
+    //recuperation activité des amis de l'utilisateur en a crée une
     private void requestEventsForUser(){
+        mesEvenements = new ArrayList<>();
+        String url = "http://10.0.2.2/~timeo.cadouot/Jumati/public/webservice/get_data_activity_user?id=" + String.valueOf(user.getId_user()) ;
+        //String url = "http://10.0.2.2/Jumati/public/webservice/get_data_activity_user?id=" + String.valueOf(mesFriends.get(i).getFriend_user_id()) ;
+        StringRequest stringRequest = new StringRequest(
+                Request.Method.GET,
+                url,
+                this::processEventsForUser,
+                this::getError);
+        fileRequeteWS.add(stringRequest);
         for (int i = 0; i < mesFriends.size(); i++) {
-            String url = "http://10.0.2.2/~maxime.dumontet/Jumati/public/webservice/get_data_activity_user?id=" + String.valueOf(mesFriends.get(i).getFriend_user_id()) ;
+            String url2 = "http://10.0.2.2/~timeo.cadouot/Jumati/public/webservice/get_data_activity_user?id=" + String.valueOf(mesFriends.get(i).getFriend_user_id()) ;
             //String url = "http://10.0.2.2/Jumati/public/webservice/get_data_activity_user?id=" + String.valueOf(mesFriends.get(i).getFriend_user_id()) ;
-            StringRequest stringRequest = new StringRequest(
+            StringRequest stringRequest2 = new StringRequest(
                     Request.Method.GET,
-                    url,
+                    url2,
                     this::processEventsForUser,
                     this::getError);
-            fileRequeteWS.add(stringRequest);
+            fileRequeteWS.add(stringRequest2);
         }
 
     }
@@ -296,9 +322,9 @@ public class Home extends AppCompatActivity implements Serializable {
                         obj.getJSONObject(1).getString("activity_id_creator"),
                         obj.getJSONObject(1).getString("activity_latitude"),
                         obj.getJSONObject(1).getString("activity_longitude"),
+                        obj.getJSONObject(1).getString("activity_name"),
                         obj.getJSONObject(1).getString("activity_max_member"),
                         obj.getJSONObject(1).getString("activity_status"),
-                        obj.getJSONObject(1).getString("activity_name"),
                         obj.getJSONObject(1).getString("category_id"),
                         obj.getJSONObject(1).getString("activity_view"));
                 mesEvenements.add(activity);
@@ -307,11 +333,11 @@ public class Home extends AppCompatActivity implements Serializable {
             getError(e);
         }
 
-        if (mesEvenements != null) {
+        /*if (mesEvenements != null) {
             if (countFriend == mesEvenements.size()) {
                 Log.d("valid", "true");
             }
-        }
+        }*/
 
 
         //je demare la creation de la map
@@ -325,8 +351,9 @@ public class Home extends AppCompatActivity implements Serializable {
 
 
     /**
-     * simple ou double tap
+     * ajout d'activité par l'utilisateur par appuie long
      */
+    //ajout activité avec un appuie long
     private Overlay buildTouchOverlay(){
         Overlay touchOverlay = new Overlay(this){
             ItemizedIconOverlay<OverlayItem> anotherItemizedIconOverlay = null;
@@ -340,95 +367,99 @@ public class Home extends AppCompatActivity implements Serializable {
             //ajout de point sur long press
             @Override
             public boolean onLongPress(final MotionEvent e, final MapView mapView) {
-                Projection proj = mapView.getProjection();
-                GeoPoint loc = (GeoPoint) proj.fromPixels((int)e.getX(), (int)e.getY());
+                if(user.getUser_activity_id_create().equals("null")) {
+                    Projection proj = mapView.getProjection();
+                    GeoPoint loc = (GeoPoint) proj.fromPixels((int)e.getX(), (int)e.getY());
 
-                //instanciation des variables
-                dialogBuilder = new AlertDialog.Builder(Home.this);
-                final View popupActivityView = getLayoutInflater().inflate(R.layout.popup_create_activity, null);
-                activity_name = popupActivityView.findViewById(R.id.activity_name);
-                activity_max_member = popupActivityView.findViewById(R.id.activity_max_member);
+                    //instanciation des variables
+                    dialogBuilder = new AlertDialog.Builder(Home.this);
+                    final View popupActivityView = getLayoutInflater().inflate(R.layout.popup_create_activity, null);
+                    activity_name = popupActivityView.findViewById(R.id.activity_name);
+                    activity_max_member = popupActivityView.findViewById(R.id.activity_max_member);
 
-                final Spinner spinner = popupActivityView.findViewById(R.id.categorie_spinner);
-                // Create an ArrayAdapter using the string array and a default spinner layout
-                ArrayAdapter<String> adapter = new ArrayAdapter<String>(Home.this, android.R.layout.simple_spinner_item, getResources().getStringArray(R.array.categories_array));
-                // Specify the layout to use when the list of choices appears
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                // Apply the adapter to the spinner
-                spinner.setAdapter(adapter);
+                    final Spinner spinner = popupActivityView.findViewById(R.id.categorie_spinner);
+                    // Create an ArrayAdapter using the string array and a default spinner layout
+                    ArrayAdapter<String> adapter = new ArrayAdapter<String>(Home.this, android.R.layout.simple_spinner_item, getResources().getStringArray(R.array.categories_array));
+                    // Specify the layout to use when the list of choices appears
+                    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                    // Apply the adapter to the spinner
+                    spinner.setAdapter(adapter);
 
-                dialogBuilder.setPositiveButton("Confirmer", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        if (!spinner.getSelectedItem().toString().equalsIgnoreCase("Choisir une catégorie")) {
-                            ActivityClass el = new ActivityClass(
-                                    new GeoPoint(Double.parseDouble(String.valueOf(loc.getLatitude())),
-                                            Double.parseDouble(String.valueOf(loc.getLongitude()))),
-                                    user.getId_user(),
-                                    Double.toString(loc.getLatitude()),
-                                    Double.toString(loc.getLongitude()),
-                                    activity_name.getText().toString(),
-                                    activity_max_member.getText().toString(),
-                                    "OPEN",
-                                    spinner.getSelectedItem().toString(),
-                                    null);
-                            //on ajoute l'evennement pour sauvegarde ulterieure (ou plutot on pourrait declencher directement la sauvegarde -- plus tard --)
-                            mesEvenements.add(el);
+                    dialogBuilder.setPositiveButton("Confirmer", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            if (!spinner.getSelectedItem().toString().equalsIgnoreCase("Choisir une catégorie")) {
+                                ActivityClass el = new ActivityClass(
+                                        new GeoPoint(Double.parseDouble(String.valueOf(loc.getLatitude())),
+                                                Double.parseDouble(String.valueOf(loc.getLongitude()))),
+                                        user.getId_user(),
+                                        Double.toString(loc.getLatitude()),
+                                        Double.toString(loc.getLongitude()),
+                                        activity_name.getText().toString(),
+                                        activity_max_member.getText().toString(),
+                                        "OPEN",
+                                        spinner.getSelectedItem().toString(),
+                                        null);
+                                //on ajoute l'evennement pour sauvegarde ulterieure (ou plutot on pourrait declencher directement la sauvegarde -- plus tard --)
+                                mesEvenements.add(el);
 
-                            String url = "http://10.0.2.2/~maxime.dumontet/Jumati/public/webservice/create_activity?id_creator="
-                                    + user.getId_user()
-                                    + "&lati=" + loc.getLatitude()
-                                    + "&longi=" + loc.getLongitude()
-                                    + "&max_member=" + activity_max_member.getText().toString()
-                                    + "&status=OPEN"
-                                    + "&name=" + activity_name.getText().toString()
-                                    + "&category=" + spinner.getSelectedItem().toString()
-                                    + "&view=null";
-                            //String url = "http://10.0.2.2/Jumati/public/webservice/get_data_activity_user?id=" + String.valueOf(mesFriends.get(i).getFriend_user_id()) ;
-                            StringRequest stringRequest = new StringRequest(
-                                    Request.Method.GET,
-                                    url,
-                                    this::processAddActivityResult,
-                                    this::getError);
-                            fileRequeteWS.add(stringRequest);
+                                String url = "http://10.0.2.2/~timeo.cadouot/Jumati/public/webservice/create_activity?id_creator="
+                                        + user.getId_user()
+                                        + "&lati=" + loc.getLatitude()
+                                        + "&longi=" + loc.getLongitude()
+                                        + "&max_member=" + activity_max_member.getText().toString()
+                                        + "&status=OPEN"
+                                        + "&name=" + activity_name.getText().toString()
+                                        + "&category=" + spinner.getSelectedItem().toString()
+                                        + "&view=null";
+                                //String url = "http://10.0.2.2/Jumati/public/webservice/get_data_activity_user?id=" + String.valueOf(mesFriends.get(i).getFriend_user_id()) ;
+                                StringRequest stringRequest = new StringRequest(
+                                        Request.Method.GET,
+                                        url,
+                                        this::processAddActivityResult,
+                                        this::getError);
+                                fileRequeteWS.add(stringRequest);
 
-                            addMarkerFromEvennementLocalise(el);
-                            map.invalidate();
-                            dlgThread();
+                                addMarkerFromEvennementLocalise(el);
+                                map.invalidate();
+                                dlgThread();
+                                dialog.dismiss();
+                            }
+                        }
+
+                        private void processAddActivityResult(String reponse) {
+                            try {
+                                JSONArray obj = new JSONArray(reponse);
+                                if (obj.getJSONObject(0).getString("activityAddReturn").equals("1")) {
+                                    Toast.makeText(Home.this, "Activité crée", Toast.LENGTH_LONG).show();
+                                    user.setUser_activity_id_create(obj.getJSONObject(1).getString("activity_id"));
+                                } else {
+                                    Toast.makeText(Home.this, "problème ajout activité", Toast.LENGTH_LONG).show();
+                                }
+                            } catch (Exception exception) {
+                                exception.printStackTrace();
+                            }
+                        }
+
+                        public void getError(Throwable t) {
+                            Log.e("categorie", "probleme serveur", t);
+                        }
+                    });
+
+                    dialogBuilder.setNegativeButton("Fermer", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
                             dialog.dismiss();
                         }
-                    }
+                    });
 
-                    private void processAddActivityResult(String reponse) {
-                        try {
-                            JSONArray obj = new JSONArray(reponse);
-                            if (obj.getJSONObject(0).getString("activityAddReturn").equals("1")) {
-                                Toast.makeText(Home.this, "Activité crée", Toast.LENGTH_LONG).show();
-                            } else {
-                                Toast.makeText(Home.this, "problème ajout activité", Toast.LENGTH_LONG).show();
-                            }
-                        } catch (Exception exception) {
-                            exception.printStackTrace();
-                        }
-                    }
-
-                    public void getError(Throwable t) {
-                        Log.e("categorie", "probleme serveur", t);
-                    }
-                });
-
-                dialogBuilder.setNegativeButton("Fermer", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                    }
-                });
-
-                //set la view
-                dialogBuilder.setView(popupActivityView);
-                dialog = dialogBuilder.create();
-                dialog.show();
-
+                    //set la view
+                    dialogBuilder.setView(popupActivityView);
+                    dialog = dialogBuilder.create();
+                    dialog.show();
+                } else {
+                    Toast.makeText(Home.this, "Il existe deja une activité", Toast.LENGTH_LONG).show();
+                }
                 return true;
             }
         };
@@ -437,8 +468,9 @@ public class Home extends AppCompatActivity implements Serializable {
 
 
     /**
-     * affiche une map avec les points interessants stockés dans mesEvenements
+     * affiche la map avec les point correspondant au évènement des amius de l'utilisateur
      */
+    //chargement de la map
     private void startMap(){
         // load/initialize the osmdroid configuration
         Context ctx = getApplicationContext();
@@ -468,6 +500,7 @@ public class Home extends AppCompatActivity implements Serializable {
         map.getOverlays().add(buildTouchOverlay());
     }
 
+    //ajout des marker correpondant au activité
     private void addMarkerFromEvennementLocalise(ActivityClass e){
         Marker m=new Marker(map);
         m.setPosition(e.getCoord());
@@ -478,29 +511,27 @@ public class Home extends AppCompatActivity implements Serializable {
     }
 
 
+    /**
+     * ajout d'amis et acceptation ou déclinaison des demande
+     */
     //ajout amis
-    public void test(View v) {
+    public void addFriends(View v) {
         dialogBuilder = new AlertDialog.Builder(this);
         final View friendPopUp = getLayoutInflater().inflate(R.layout.popup_friend, null);
 
         RecyclerView viewRecyclerBook = (RecyclerView) friendPopUp.findViewById(R.id.recyclerViewDemandeFriend);
 
-        dialogBuilder.setView(friendPopUp);
-        dialog = dialogBuilder.create();
-        dialog.show();
-
-        Log.d("test", String.valueOf(demandeFriends));
         DemandeFriendsAdapter adapter = new DemandeFriendsAdapter(demandeFriends);
+        adapter.setListener(this);
         viewRecyclerBook.setAdapter(adapter);
         viewRecyclerBook.setLayoutManager(new LinearLayoutManager(this));
 
         pseudoAddFriends = (EditText) friendPopUp.findViewById(R.id.pseudoAddFriends);
         buttonAddFriends = (Button) friendPopUp.findViewById(R.id.buttonAddFriends);
-        buttonClose = (Button) friendPopUp.findViewById(R.id.buttonClose);
 
-        buttonClose.setOnClickListener(new View.OnClickListener() {
+        dialogBuilder.setNegativeButton("Fermer", new DialogInterface.OnClickListener() {
             @Override
-            public void onClick(View view) {
+            public void onClick(DialogInterface dialog, int which) {
                 dialog.dismiss();
             }
         });
@@ -510,7 +541,7 @@ public class Home extends AppCompatActivity implements Serializable {
             public void onClick(View view) {
                 String pseudoFriends = pseudoAddFriends.getText().toString();
 
-                String url = "http://10.0.2.2/~maxime.dumontet/Jumati/public/webservice/get_data_user_by_pseudo?pseudo=" + pseudoFriends + "&exp=" + user.getId_user() ;
+                String url = "http://10.0.2.2/~timeo.cadouot/Jumati/public/webservice/get_data_user_by_pseudo?pseudo=" + pseudoFriends + "&exp=" + user.getId_user() ;
                 //String url = "http://10.0.2.2/Jumati/public/webservice/get_data_user_with_email?email=" + userEmaiToString + "&mdp=" + userPasswordToString;
                 StringRequest stringRequest = new StringRequest(
                         Request.Method.GET,
@@ -526,6 +557,7 @@ public class Home extends AppCompatActivity implements Serializable {
                     JSONArray obj = new JSONArray(reponse);
                     if (obj.getJSONObject(0).getString("usersReturn").equals("1")) {
                         Toast.makeText(Home.this, "Demande envoyé", Toast.LENGTH_LONG).show();
+                        dialog.dismiss();
                     } else {
                         Toast.makeText(Home.this, "Utilisateur introuvable", Toast.LENGTH_LONG).show();
                     }
@@ -539,59 +571,68 @@ public class Home extends AppCompatActivity implements Serializable {
                 Log.e("CONNECT", "Problème communication serveur", t);
             }
         });
+
+        dialogBuilder.setView(friendPopUp);
+        dialog = dialogBuilder.create();
+        dialog.show();
     }
 
-    /**
-     * Simule la recuperation des evenements par ws
-     * @param usr
-     */
-   /* private void fakeRequestEventsForUser(String usr){
-        ArrayList<EvenementLocalise> elist = new ArrayList<>();
-        EvenementLocalise el = new EvenementLocalise(new GeoPoint(47.368284, 1.740004),"tennis avec Louise");
-        elist.add(el);
-        el = new EvenementLocalise(new GeoPoint(47.370524, 1.738388),"Foot avec Bob");
-        elist.add(el);
-        mesEvenements=elist;
-        startMap();
-    }*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    /**
-     * test different mode
-     * */
-/*
-    public void modeVisualisation(View v){
-        etat=EnumerationEtatsInteraction.VISUALISATION;
+    @Override
+    //accept demande
+    public void acceptDemande(int pos, View v) {
+        FriendsClass demandeFriend = demandeFriends.get(pos);
+        String url = "http://10.0.2.2/~timeo.cadouot/Jumati/public/webservice/accept_demande?id=" + String.valueOf(demandeFriend.getFriend_id_demande()) ;
+        //String url = "http://10.0.2.2/Jumati/public/webservice/accept_demande?id=" + String.valueOf(demandeFriend.getFriend_id_demande()) ;
+        StringRequest stringRequest = new StringRequest(
+                Request.Method.GET,
+                url,
+                this::processResultAccept,
+                this::getError);
+        fileRequeteWS.add(stringRequest);
     }
-    public void modeEdition(View v){
-        etat=EnumerationEtatsInteraction.EDITION;
+
+    //decline demane
+    public void declineDemande(int pos, View v) {
+        FriendsClass demandeFriend = demandeFriends.get(pos);
+        String url = "http://10.0.2.2/~timeo.cadouot/Jumati/public/webservice/decline_demande?id=" + String.valueOf(demandeFriend.getFriend_id_demande()) ;
+        //String url = "http://10.0.2.2/Jumati/public/webservice/decline_demande?id=" + String.valueOf(demandeFriend.getFriend_id_demande()) ;
+        StringRequest stringRequest = new StringRequest(
+                Request.Method.GET,
+                url,
+                this::processResultDecline,
+                this::getError);
+        fileRequeteWS.add(stringRequest);
     }
-    public void modeSupression(View v){
-        etat=EnumerationEtatsInteraction.VISUALISATION;
+
+    //traitement resultat acceptation demande d'amis
+    private void processResultAccept(String reponse) {
+        try {
+            JSONArray obj = new JSONArray(reponse);
+            if(obj.getJSONObject(0).getString("acceptDemandeReturn").equals("1")) {
+                Toast.makeText(this,"Demande accepté", Toast.LENGTH_LONG).show();
+                dialog.dismiss();
+
+                //test
+                requestGetDemandeFriends();
+                requestGetFriendsByUser();
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
-    public void modeCreation(View v){
-        etat=EnumerationEtatsInteraction.CREATION;
-    }*/
 
-
-
-
-
-
-
+    //traitement resultat decline demande d'amis
+    private void processResultDecline(String reponse) {
+        try {
+            JSONArray obj = new JSONArray(reponse);
+            if(obj.getJSONObject(0).getString("declineDemandeReturn").equals("1")) {
+                Toast.makeText(this,"Demande décliné", Toast.LENGTH_LONG).show();
+                dialog.dismiss();
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
 
 
     /**
@@ -612,41 +653,4 @@ public class Home extends AppCompatActivity implements Serializable {
         }
         return selected;
     }*/
-
-
-
-
-
-
-
-    /**
-     * Calculate distance between two points in latitude and longitude taking
-     * into account height difference. If you are not interested in height
-     * difference pass 0.0. Uses Haversine method as its base.
-     *
-     * lat1, lon1 Start point lat2, lon2 End point el1 Start altitude in meters
-     * el2 End altitude in meters
-     * @returns Distance in Meters
-     */
-    private double distance(double lat1, double lat2, double lon1,
-                                  double lon2, double el1, double el2) {
-
-        final int R = 6371; // Radius of the earth
-
-        double latDistance = Math.toRadians(lat2 - lat1);
-        double lonDistance = Math.toRadians(lon2 - lon1);
-        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
-                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
-                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        double distance = R * c * 1000; // convert to meters
-
-        double height = el1 - el2;
-
-        distance = Math.pow(distance, 2) + Math.pow(height, 2);
-
-        return Math.sqrt(distance);
-    }
-
-
 }

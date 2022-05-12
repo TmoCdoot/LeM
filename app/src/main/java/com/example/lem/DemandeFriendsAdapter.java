@@ -14,8 +14,14 @@ import java.util.List;
 public class DemandeFriendsAdapter extends RecyclerView.Adapter<DemandeFriendsHolder> {
     private final List<FriendsClass> demandeFriends;
 
+    DemandeFriendsInterface listener;
+
     public DemandeFriendsAdapter(List<FriendsClass> d) {
         demandeFriends = d;
+    }
+
+    public void setListener(DemandeFriendsInterface l) {
+        listener = l;
     }
 
     @NonNull
@@ -26,7 +32,7 @@ public class DemandeFriendsAdapter extends RecyclerView.Adapter<DemandeFriendsHo
 
         View demandeFriendRow = inflater.inflate(R.layout.row_view_demande_friends, parent, false);
 
-        DemandeFriendsHolder viewHolder = new DemandeFriendsHolder(demandeFriendRow);
+        DemandeFriendsHolder viewHolder = new DemandeFriendsHolder(demandeFriendRow, listener);
         return viewHolder;
     }
 

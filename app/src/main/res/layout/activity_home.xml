@@ -13,7 +13,7 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="13dp"
-        android:onClick="test"
+        android:onClick="addFriends"
         android:text="@string/add_friends"
         android:textColor="#212121"
         app:layout_constraintBottom_toBottomOf="parent"

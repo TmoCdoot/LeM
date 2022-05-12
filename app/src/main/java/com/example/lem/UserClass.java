@@ -54,4 +54,8 @@ public class UserClass implements Serializable {
     public String getUser_statut() {
         return user_statut;
     }
+
+    public void setUser_activity_id_create(String user_activity_id_create) {
+        this.user_activity_id_create = user_activity_id_create;
+    }
 }
